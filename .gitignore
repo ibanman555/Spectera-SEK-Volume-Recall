@@ -3,6 +3,8 @@ spectera-password.dat
 spectera-base-ip.txt
 sek-volume-presets.csv
 Logs/
+PresetBackups/
+*.tmp
 *.log
 
 # Windows / editor files
