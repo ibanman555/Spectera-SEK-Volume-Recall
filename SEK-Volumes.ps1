@@ -4,7 +4,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory=$true)]
-    [ValidateSet('Setup','Export','Preview','Apply','List')]
+    [ValidateSet('Setup','Export','Save','Preview','Apply','List')]
     [string]$Mode,
     [string]$BaseIP = '',
     [switch]$TrustLocalCertificate
@@ -35,15 +35,15 @@ $script:OwnUsageMark = $false
 $script:UsageMarkName = '3rd-party.SEK-Volume-Presets'
 # Every silent Apply run writes a dated diagnostic transcript.
 $script:TranscriptActive = $false
-if ($Mode -eq 'Apply') {
+if ($Mode -in @('Apply','Save')) {
     $LogDirectory = Join-Path $Root 'Logs'
     if (-not (Test-Path -LiteralPath $LogDirectory)) {
         New-Item -ItemType Directory -Path $LogDirectory -Force | Out-Null
     }
-    $LogPath = Join-Path $LogDirectory ("SEK-Recall-{0}.log" -f (Get-Date -Format 'yyyy-MM-dd_HH-mm-ss-fff'))
+    $LogPath = Join-Path $LogDirectory ("SEK-{0}-{1}.log" -f $Mode, (Get-Date -Format 'yyyy-MM-dd_HH-mm-ss-fff'))
     Start-Transcript -LiteralPath $LogPath -ErrorAction Stop | Out-Null
     $script:TranscriptActive = $true
-    Write-Host "Spectera SEK recall started at $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+    Write-Host "Spectera SEK $Mode started at $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
     Write-Host "Log: $LogPath"
 }
 
@@ -270,6 +270,49 @@ try {
         Write-Host "Exported $($devices.Count) paired SEK records to: $PresetPath"
         Write-Host 'Keep ALL paired SEK rows. Edit only VolumeDb values; do not change mtUid.'
         Write-Host 'Preview and Apply validate that the CSV includes every paired SEK before writing.'
+        return
+    }
+
+    # Capture the BASE-STATION-STORED current volumes; leave the base station unchanged.
+    if ($Mode -eq 'Save') {
+        $devices = @(Get-PairedSek)
+        if ($devices.Count -lt 1) { throw "No paired SEK entries returned; existing CSV untouched." }
+        $newRows = @(
+            foreach ($d in $devices) {
+                [pscustomobject]@{
+                    mtUid=[string]$d.mtUid
+                    Name=[string]$d.name
+                    Serial=[string]$d.serial
+                    VolumeDb=([double]$d.headphoneVolume).ToString('0.0', [Globalization.CultureInfo]::InvariantCulture)
+                }
+            }
+        )
+        $tmp = Join-Path $Root ("sek-volume-presets-{0}.tmp" -f ([guid]::NewGuid().ToString('N')))
+        try {
+            $newRows | Export-Csv -LiteralPath $tmp -NoTypeInformation -Encoding UTF8
+            if (@(Import-Csv -LiteralPath $tmp).Count -ne $devices.Count) {
+                throw 'New preset CSV failed verification; previous presets left unchanged.'
+            }
+            if (Test-Path -LiteralPath $PresetPath) {
+                $backupDir = Join-Path $Root 'PresetBackups'
+                if (-not (Test-Path -LiteralPath $backupDir)) {
+                    New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
+                }
+                $backup = Join-Path $backupDir ("sek-volume-presets-{0}.csv" -f (Get-Date -Format 'yyyy-MM-dd_HH-mm-ss-fff'))
+                Copy-Item -LiteralPath $PresetPath -Destination $backup -ErrorAction Stop
+                [System.IO.File]::Replace($tmp, $PresetPath, $null)
+                Write-Host "Previous CSV backed up: $backup"
+            }
+            else {
+                [System.IO.File]::Move($tmp, $PresetPath)
+            }
+            Write-Host "SAVED $($devices.Count) paired SEK stored headphone volumes to $PresetPath"
+        }
+        finally {
+            if (Test-Path -LiteralPath $tmp) {
+                Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+            }
+        }
         return
     }
 
