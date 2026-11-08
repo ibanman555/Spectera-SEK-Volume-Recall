@@ -52,3 +52,21 @@ Don't share spectera-password.dat, spectera-base-ip.txt, sek-volume-presets.csv
 or Logs/ with other users.
 
 API / security / troubleshooting details: READ README.md FIRST.
+
+
+SECOND MIDIFIRE/BOME BUTTON: SAVE CURRENT STORED VOLUMES
+=======================================================
+Save reads all paired SEK stored volumes from the base station and replaces
+the local preset CSV, first backing it up to C:\Spectera\PresetBackups\.
+It does not change device volumes or capture unsynced pack-local knob changes.
+
+Test visibly:
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Spectera\SEK-Volumes.ps1" -Mode Save -TrustLocalCertificate
+
+With a separate MIDI message and a second Bome translator:
+Outgoing = Execute File
+File: C:\Windows\System32\wscript.exe
+Parameters: //B //Nologo "C:\Spectera\Save-SEK-Volumes.vbs"
+
+CAUTION: SAVE replaces the CSV targets with current stored volumes; backups
+are retained. RECALL uses the same CSV and the existing Recall VBS launcher.
