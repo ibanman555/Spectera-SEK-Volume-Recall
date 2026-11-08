@@ -10,6 +10,7 @@ This is an independent community utility, **not an official Sennheiser product**
 
 - Read every **paired** SEK entry from the base station (including disconnected and powered-off devices).
 - Export each SEK's unique `mtUid`, name, serial number and stored headphone volume to a **CSV**.
+- **Save** the current base-station-stored volume settings for all paired SEKs with one button, backing up the previous CSV.
 - Assign each SEK an **individual** desired headphone volume in dB in that CSV.
 - Preview current versus desired values without changing anything.
 - Apply only changed values through `PUT /api/mts/paired/all/{mtUid}`, and read back each changed value.
@@ -30,14 +31,15 @@ It does **not** alter routing, RF channels, microphone gain, output mix levels, 
 
 | File | Purpose |
 |---|---|
-| `SEK-Volumes.ps1` | Main API script: Setup, List, Export, Preview, Apply |
-| `Recall-SEK-Volumes.vbs` | Hidden launcher for Bome's Execute File action |
+| `SEK-Volumes.ps1` | Main API script: Setup, List, Export, **Save**, Preview, Apply |
+| `Recall-SEK-Volumes.vbs` | Hidden RECALL launcher for Bome's Execute File action |
+| `Save-SEK-Volumes.vbs` | Hidden SAVE launcher for a second Bome/Stream Deck button |
 | `CSV-EXAMPLE-DO-NOT-USE.csv` | Fake identifiers only, for format reference |
 | `QUICK-START.txt` | Short setup and Bome/MidiFire instructions |
 | `README.md` | Detailed guide |
 | `LICENSE.txt` | MIT redistribution license |
 
-**Never distribute** your generated `spectera-password.dat`, `spectera-base-ip.txt`, `sek-volume-presets.csv`, or any files in `Logs`. The distributed ZIP contains none of these.
+**Never distribute** your generated `spectera-password.dat`, `spectera-base-ip.txt`, `sek-volume-presets.csv`, or any files in `Logs` or `PresetBackups`. The distributed ZIP contains none of these.
 
 ## 1. Install
 
@@ -98,6 +100,32 @@ mtUid,Name,Serial,VolumeDb
 100000001,EXAMPLE SEK A,DEMO-SERIAL-A,-35.0
 100000002,EXAMPLE SEK B,DEMO-SERIAL-B,-40.0
 ```
+
+## 4a. One-button SAVE of current stored headphone volumes
+
+Unlike `Export` (which will not overwrite an existing CSV), `Save` replaces the CSV with the **current headphone-volume settings stored by the Spectera base station** for every paired SEK, including powered-off packs. It first backs up the previous CSV in `C:\Spectera\PresetBackups\`. No volumes are changed on the base station.
+
+Test the SAVE function visibly:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Spectera\SEK-Volumes.ps1" -Mode Save -TrustLocalCertificate
+```
+
+For a second **Stream Deck MidiFire → Bome** button, use a *different* MIDI Note/CC message and a second Bome translator. Set its **Outgoing → Execute File** to:
+
+**File to Execute**
+```text
+C:\Windows\System32\wscript.exe
+```
+
+**Parameters**
+```text
+//B //Nologo "C:\Spectera\Save-SEK-Volumes.vbs"
+```
+
+The hidden SAVE operation writes a dated log to `C:\Spectera\Logs\`. Your existing RECALL button continues using `Recall-SEK-Volumes.vbs`.
+
+**SAVE overwrites any individually edited target values in the current CSV.** The timestamped backup preserves your last preset. It captures settings stored on the base station, not pack-local adjustments that have not synced back to it. If you want to save adjustments made on a beltpack, first ensure WebUI shows the new stored headphone volume.
 
 ## 5. Edit your desired volume values
 
