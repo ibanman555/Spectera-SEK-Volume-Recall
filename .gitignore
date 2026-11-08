@@ -1,0 +1,12 @@
+# Local credentials, equipment-specific configuration and runtime data
+spectera-password.dat
+spectera-base-ip.txt
+sek-volume-presets.csv
+Logs/
+*.log
+
+# Windows / editor files
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/
