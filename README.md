@@ -1,2 +1,174 @@
-# Spectera-SEK-Volume-Recall
-One-button individual headphone volume recall for Sennheiser Spectera SEK beltpacks
+# Spectera SEK Individual Volume Presets
+
+**Shareable kit — version 1.0 | November 2026**
+
+A Windows utility to **save and recall a different headphone volume for every paired Sennheiser Spectera SEK beltpack** on **one base station**, with a single trigger through **Bome MIDI Translator Pro**. It can be triggered by an **Elgato Stream Deck** using a MIDI-output action such as the user's **MidiFire** plugin. **No Companion or SoundBase is required.**
+
+This is an independent community utility, **not an official Sennheiser product**. It uses Sennheiser's documented SSCv2 API. Verify compatibility on your own firmware before show use. No Sennheiser code or logos are included.
+
+## What it does
+
+- Read every **paired** SEK entry from the base station (including disconnected and powered-off devices).
+- Export each SEK's unique `mtUid`, name, serial number and stored headphone volume to a **CSV**.
+- Assign each SEK an **individual** desired headphone volume in dB in that CSV.
+- Preview current versus desired values without changing anything.
+- Apply only changed values through `PUT /api/mts/paired/all/{mtUid}`, and read back each changed value.
+- Write an operation log in the `Logs` folder.
+- Include **all currently paired SEK records** rather than assuming a fixed quantity (works with 16, 22 or another supported number).
+
+It does **not** alter routing, RF channels, microphone gain, output mix levels, min/max headphone limits, or any DiGiCo console setting. When an SEK connects later, confirm on your firmware that its stored setting is applied as expected. The API documentation distinguishes *paired* devices from *currently connected* devices.
+
+## Requirements
+
+- Windows 10/11 with **Windows PowerShell 5.1** and `curl.exe` available.
+- A Spectera base station on a network accessible from the Windows computer, with a **WebUI password already configured**.
+- A Windows account that can run local scripts.
+- Bome MIDI Translator Pro, if you want to use the provided **one-button launcher**; Stream Deck and MidiFire (or another MIDI sender) are optional.
+- A trusted, private control network. The example commands below use `-TrustLocalCertificate`, which disables the certificate-verification check for the local HTTPS connection.
+
+## Files included in this ZIP
+
+| File | Purpose |
+|---|---|
+| `SEK-Volumes.ps1` | Main API script: Setup, List, Export, Preview, Apply |
+| `Recall-SEK-Volumes.vbs` | Hidden launcher for Bome's Execute File action |
+| `CSV-EXAMPLE-DO-NOT-USE.csv` | Fake identifiers only, for format reference |
+| `QUICK-START.txt` | Short setup and Bome/MidiFire instructions |
+| `README.md` | Detailed guide |
+| `LICENSE.txt` | MIT redistribution license |
+
+**Never distribute** your generated `spectera-password.dat`, `spectera-base-ip.txt`, `sek-volume-presets.csv`, or any files in `Logs`. The distributed ZIP contains none of these.
+
+## 1. Install
+
+Extract the files directly into `C:\Spectera` (not a nested folder):
+
+```text
+C:\Spectera\SEK-Volumes.ps1
+C:\Spectera\Recall-SEK-Volumes.vbs
+C:\Spectera\CSV-EXAMPLE-DO-NOT-USE.csv
+C:\Spectera\README.md
+C:\Spectera\QUICK-START.txt
+```
+
+If you choose another folder, adjust the Bome **Parameters** path in section 7. The hidden launcher resolves `SEK-Volumes.ps1` relative to its own location.
+
+## 2. One-time Setup: enter your base-station IP and password
+
+Open **Windows PowerShell** under the SAME Windows account that will run Bome. Paste:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Spectera\SEK-Volumes.ps1" -Mode Setup
+```
+
+The script asks for your base-station **IPv4 address** and then your Spectera **WebUI password**. It creates two **local-only** files:
+
+- `spectera-base-ip.txt`: Your base-station address.
+- `spectera-password.dat`: Windows DPAPI-encrypted password tied to that Windows user/computer.
+
+Do not share these files. Run Setup again if you change the IP/password. You can also override the saved IP for a visible test with `-BaseIP 192.168.1.100`; one script instance addresses **one** base station.
+
+## 3. Read-only connection test
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Spectera\SEK-Volumes.ps1" -Mode List -TrustLocalCertificate
+```
+
+Expect a table of **all paired SEK entries**, including disconnected ones. If it fails, first check connection, TCP port 443, credentials, and firmware/API support. A separate read-only test is:
+
+```powershell
+Test-NetConnection YOUR_BASE_STATION_IP -Port 443
+curl.exe -k --http1.1 --noproxy "*" -u controlSennheiser "https://YOUR_BASE_STATION_IP/api/mts/paired/all"
+```
+
+For the `curl.exe` test, enter your password interactively. **Never** put your password directly in a shell command or public screenshot.
+
+## 4. Export the actual paired packs to CSV (read-only)
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Spectera\SEK-Volumes.ps1" -Mode Export -TrustLocalCertificate
+```
+
+Creates `C:\Spectera\sek-volume-presets.csv` from *your own hardware*. Export **refuses to overwrite** an existing CSV, to protect previous presets. If you intentionally want a fresh export, first back up and rename your existing CSV.
+
+Example of the format (these IDs are **fake**):
+
+```csv
+mtUid,Name,Serial,VolumeDb
+100000001,EXAMPLE SEK A,DEMO-SERIAL-A,-35.0
+100000002,EXAMPLE SEK B,DEMO-SERIAL-B,-40.0
+```
+
+## 5. Edit your desired volume values
+
+Open `C:\Spectera\sek-volume-presets.csv` in Notepad or Excel. **Change only `VolumeDb`** for each pack. Keep the `mtUid` column exactly as exported, and **keep every row for every paired SEK**. Save the file in CSV format, not XLSX. The script matches packs by `mtUid`, NOT names, serial numbers, or list order.
+
+Volume values are in dB and need to be in **0.5 dB increments**. The script validates each target against the pack's actual configured headphone minimum and maximum returned by the base station.
+
+If you add, replace, unpair, or re-pair a pack, **re-export a fresh CSV**, then review/edit the new list. A paired-device mismatch stops the script rather than silently skipping devices.
+
+## 6. Preview and test a single change, then apply
+
+First **preview** (read-only):
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Spectera\SEK-Volumes.ps1" -Mode Preview -TrustLocalCertificate
+```
+
+Check the `StoredDb` and `TargetDb` values. For the first write test, leave all exported target values unchanged **except one SEK**; choose a **lower, safe** volume, and make sure earphones are **not in anyone's ears**. Then run **Apply** visibly:
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Spectera\SEK-Volumes.ps1" -Mode Apply -TrustLocalCertificate
+```
+
+Only different values are written. The script reads back the stored volume after each change and saves a dated log under `C:\Spectera\Logs\`. Confirm the result in WebUI, and check an offline SEK's volume after it connects. Then edit the complete CSV to all desired levels, run Preview again, and run Apply. Use caution with any change that **increases** headphone levels.
+
+## 7. Bome MIDI Translator Pro + Stream Deck MidiFire
+
+There is **no universal MidiFire profile included**, because each user's MIDI port, MIDI message and Stream Deck configuration can differ. Use any unused Note On or CC message you can identify inside Bome.
+
+**Illustrative MIDI trigger:** MIDI Note On, channel 16, note 110, velocity 127. Avoid conflicts with other existing Bome translators or rig controls. Configure your Stream Deck **MidiFire** button to send this MIDI message over a port that Bome can receive (for example a virtual MIDI port supported by your setup).
+
+In **Bome MIDI Translator Pro**:
+
+1. Enable the MIDI input port that receives the MidiFire message.
+2. Create a preset such as `Spectera SEK Volume Recall`.
+3. Create a translator with **Incoming = the same MIDI Note On** you sent from MidiFire. Avoid triggering on Note Off/release.
+4. Set **Outgoing** to `Execute File` with:
+
+   **File to Execute**
+
+   ```text
+   C:\Windows\System32\wscript.exe
+   ```
+
+   **Parameters**
+
+   ```text
+   //B //Nologo "C:\Spectera\Recall-SEK-Volumes.vbs"
+   ```
+
+5. Save your Bome project. Press the Stream Deck button once to invoke the saved per-SEK volumes.
+6. Inspect the newest log in `C:\Spectera\Logs\` to confirm the result. The operation is silent and short-lived; it does not run as a persistent service.
+
+**Debugging:** If the Bome trigger isn't received, use Bome's MIDI input monitor to confirm the message/port. If the button launches but the script fails, run the **visible** `-Mode Apply` command from section 6 to see the error. Do not troubleshoot with a hidden process.
+
+## Important security and operational notes
+
+- `-TrustLocalCertificate` uses curl's `insecure` setting and skips the base station's server certificate verification. Only use it on a trusted LAN. To enable verification, provision/trust the base station's certificate and omit the switch in both direct commands and the `.vbs` launcher.
+- Authentication uses HTTP Basic **inside HTTPS** to Sennheiser's documented user `controlSennheiser`. The password is protected at rest using DPAPI on the local Windows user account. The runtime sends a Basic Authorization header to `curl.exe` through redirected stdin, **not via the process command line**. The password is briefly materialized in process memory.
+- The script uses Sennheiser's `/api/ssc/usagemark` convention to coordinate API writes. This is **advisory**, not a lock. Avoid simultaneous configuration writes in WebUI, LinkDesk or SoundBase during Apply.
+- Only API reads are used by `List`, `Export`, and `Preview`. `Apply` updates the stored `headphoneVolume` property, and temporarily writes/releases the usage marker. The script does not intentionally update other SEK properties.
+- `-Mode Apply` validates that the CSV includes exactly the current paired SEK IDs. Offline devices can have stored settings updated, but test your firmware's sync behavior before relying on show-day recall.
+- `-Mode Setup` will replace the locally saved base-station IP and password. It won't change volumes.
+- Keep backups of your private CSV, and do not share logs, real pack serial numbers, base-station network details or credentials without your organization's approval.
+- The `.vbs` silent launcher runs as the active Windows user; it will **not** work with a DPAPI credential saved under a different Windows user.
+
+## API documentation
+
+- https://docs.cloud.sennheiser.com/en-us/api-docs/spectera/usage.html
+- https://docs.cloud.sennheiser.com/en-us/api-docs/spectera/open-api-specification-18-3.html
+
+## Notes about testing
+
+This shareable release uses the **all-paired-packs API logic** that was confirmed working in its original environment. **The new interactive setup/IP-file handling is a packaging change and has not been tested on every Windows/Spectera firmware combination**. Users must run List → Export → Preview → one-pack Apply and verify settings on their own rig before relying on it.
