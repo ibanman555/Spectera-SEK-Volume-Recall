@@ -1,0 +1,54 @@
+SPECTERA SEK VOLUME PRESETS — QUICK START (community release 1.0)
+==========================================================
+
+Extract this ZIP directly to C:\Spectera (all files in that folder).
+No real SEK IDs, passwords, or presets are included in the ZIP.
+
+WINDOWS POWERSHELL — FIRST-TIME SETUP
+1. Open PowerShell in your normal Windows user account (same one that runs Bome).
+2. Enter Spectera base station IP and password:
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Spectera\SEK-Volumes.ps1" -Mode Setup
+
+3. Read-only list of ALL paired packs, even those turned off:
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Spectera\SEK-Volumes.ps1" -Mode List -TrustLocalCertificate
+
+4. Export your REAL volumes and mtUid values (only if CSV doesn't exist):
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Spectera\SEK-Volumes.ps1" -Mode Export -TrustLocalCertificate
+
+5. Edit C:\Spectera\sek-volume-presets.csv. Change ONLY VolumeDb.
+   Keep ALL rows / mtUid values unchanged.
+
+6. Read-only preview:
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Spectera\SEK-Volumes.ps1" -Mode Preview -TrustLocalCertificate
+
+7. For first write test, alter only ONE SEK to a lower safe level, and ensure
+   nobody is wearing the IEMs. Run visibly:
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Spectera\SEK-Volumes.ps1" -Mode Apply -TrustLocalCertificate
+
+Check WebUI + next pack connection, then finish all target levels in CSV.
+Re-run Preview and Apply.
+
+BOME / STREAM DECK / MIDIFIRE
+============================
+Stream Deck MidiFire plugin -> chosen unused MIDI Note On/CC -> Bome MIDI input
+-> matching Bome translator -> Outgoing / Execute File:
+
+File to Execute:
+C:\Windows\System32\wscript.exe
+
+Parameters:
+//B //Nologo "C:\Spectera\Recall-SEK-Volumes.vbs"
+
+Example trigger only: Note On, ch 16, note 110, velocity 127.
+Pick your own free message and avoid a trigger on Note Off.
+
+The hidden launcher writes a log into C:\Spectera\Logs\.
+Don't share spectera-password.dat, spectera-base-ip.txt, sek-volume-presets.csv
+or Logs/ with other users.
+
+API / security / troubleshooting details: READ README.md FIRST.
