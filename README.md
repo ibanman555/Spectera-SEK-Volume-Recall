@@ -174,13 +174,15 @@ Only different values are written. The script reads back the stored volume after
 
 Before relying on Stream Deck, double-click the respective `.vbs` in File Explorer to verify Windows Script Host launches it, then check `C:\Spectera\Logs\`. Verify the same Windows account is used for credential Setup and Stream Deck. There is **no on-button success/error feedback** from the hidden launcher; review the log if an action appears not to work. If `.vbs` file associations are restricted by Windows policy, use the MIDI/Bome method below or run the PowerShell command visibly for troubleshooting.
 
-### Option B — Stream Deck MidiFire → Bome MIDI Translator Pro
+### Option B — Stream Deck MIDIFire → Bome MIDI Translator Pro
 
 Use this if you already route other show controls through Bome, or need MIDI-based triggering. **This is an alternative to Option A, not an additional requirement.**
 
-There is **no universal MidiFire profile included**, because each user's MIDI port, MIDI message and Stream Deck configuration can differ. Use any unused Note On or CC message you can identify inside Bome.
+**Download MIDIFire (Windows):** [MIDIFire — latest GitHub release](https://github.com/ibanman555/MIDIFire/releases/latest) · [source code and installation guide](https://github.com/ibanman555/MIDIFire). MIDIFire is a free, open-source Windows Stream Deck MIDI plugin distributed through GitHub rather than the Elgato Marketplace. Under the latest release's **Assets**, download `com.koop.streamdeck-midi.streamDeckPlugin` (not GitHub's source-code ZIP), then double-click it to install through Stream Deck. In the Stream Deck software, add **MIDIFire → Fire MIDI** to a key and select the MIDI output that Bome receives. See the MIDIFire repository for system requirements and plugin setup. The plugin is optional; **Option A needs neither MIDIFire nor Bome**.
 
-**Illustrative MIDI trigger:** MIDI Note On, channel 16, note 110, velocity 127. Avoid conflicts with other existing Bome translators or rig controls. Configure your Stream Deck **MidiFire** button to send this MIDI message over a port that Bome can receive (for example a virtual MIDI port supported by your setup).
+There is **no universal MIDIFire profile included**, because each user's MIDI port, MIDI message and Stream Deck configuration can differ. Use any unused Note On or CC message you can identify inside Bome.
+
+**Illustrative MIDI trigger:** MIDI Note On, channel 16, note 110, velocity 127. Avoid conflicts with other existing Bome translators or rig controls. Configure your Stream Deck **MIDIFire** button to send this MIDI message over a port that Bome can receive (for example a virtual MIDI port supported by your setup).
 
 In **Bome MIDI Translator Pro**:
 
