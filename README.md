@@ -2,7 +2,7 @@
 
 **Shareable kit — version 1.0 | November 2026**
 
-A Windows utility to **save and recall a different headphone volume for every paired Sennheiser Spectera SEK beltpack** on **one base station**, with a single trigger through **Bome MIDI Translator Pro**. It can be triggered by an **Elgato Stream Deck** using a MIDI-output action such as the user's **MidiFire** plugin. **No Companion or SoundBase is required.**
+A Windows utility to **save and recall a different headphone volume for every paired Sennheiser Spectera SEK beltpack** on **one base station**. Trigger SAVE and RECALL directly with the **Elgato Stream Deck System → Open** action, or use **Stream Deck MidiFire → Bome MIDI Translator Pro** if you prefer MIDI-triggered automation. **No Companion or SoundBase is required.**
 
 This is an independent community utility, **not an official Sennheiser product**. It uses Sennheiser's documented SSCv2 API. Verify compatibility on your own firmware before show use. No Sennheiser code or logos are included.
 
@@ -24,7 +24,7 @@ It does **not** alter routing, RF channels, microphone gain, output mix levels, 
 - Windows 10/11 with **Windows PowerShell 5.1** and `curl.exe` available.
 - A Spectera base station on a network accessible from the Windows computer, with a **WebUI password already configured**.
 - A Windows account that can run local scripts.
-- Bome MIDI Translator Pro, if you want to use the provided **one-button launcher**; Stream Deck and MidiFire (or another MIDI sender) are optional.
+- **Choose either trigger option:** Elgato Stream Deck **System → Open** (no Bome or MidiFire needed), **or** the Stream Deck MidiFire plugin and Bome MIDI Translator Pro. The PowerShell script can also be run directly without Stream Deck.
 - A trusted, private control network. The example commands below use `-TrustLocalCertificate`, which disables the certificate-verification check for the local HTTPS connection.
 
 ## Files included in this ZIP
@@ -32,8 +32,8 @@ It does **not** alter routing, RF channels, microphone gain, output mix levels, 
 | File | Purpose |
 |---|---|
 | `SEK-Volumes.ps1` | Main API script: Setup, List, Export, **Save**, Preview, Apply |
-| `Recall-SEK-Volumes.vbs` | Hidden RECALL launcher for Bome's Execute File action |
-| `Save-SEK-Volumes.vbs` | Hidden SAVE launcher for a second Bome/Stream Deck button |
+| `Recall-SEK-Volumes.vbs` | Hidden RECALL launcher for Stream Deck **System → Open** or Bome's Execute File action |
+| `Save-SEK-Volumes.vbs` | Hidden SAVE launcher for Stream Deck **System → Open** or Bome's Execute File action |
 | `CSV-EXAMPLE-DO-NOT-USE.csv` | Fake identifiers only, for format reference |
 | `QUICK-START.txt` | Short setup and Bome/MidiFire instructions |
 | `README.md` | Detailed guide |
@@ -48,16 +48,17 @@ Extract the files directly into `C:\Spectera` (not a nested folder):
 ```text
 C:\Spectera\SEK-Volumes.ps1
 C:\Spectera\Recall-SEK-Volumes.vbs
+C:\Spectera\Save-SEK-Volumes.vbs
 C:\Spectera\CSV-EXAMPLE-DO-NOT-USE.csv
 C:\Spectera\README.md
 C:\Spectera\QUICK-START.txt
 ```
 
-If you choose another folder, adjust the Bome **Parameters** path in section 7. The hidden launcher resolves `SEK-Volumes.ps1` relative to its own location.
+If you choose another folder, browse to the actual `.vbs` file in Stream Deck or adjust Bome's **Parameters** path in section 7. The hidden launchers resolve `SEK-Volumes.ps1` relative to their own location.
 
 ## 2. One-time Setup: enter your base-station IP and password
 
-Open **Windows PowerShell** under the SAME Windows account that will run Bome. Paste:
+Open **Windows PowerShell** under the same Windows account that will run Stream Deck or Bome. Paste:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Spectera\SEK-Volumes.ps1" -Mode Setup
@@ -111,7 +112,7 @@ Test the SAVE function visibly:
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Spectera\SEK-Volumes.ps1" -Mode Save -TrustLocalCertificate
 ```
 
-For a second **Stream Deck MidiFire → Bome** button, use a *different* MIDI Note/CC message and a second Bome translator. Set its **Outgoing → Execute File** to:
+For users choosing **Stream Deck MidiFire → Bome**, use a *different* MIDI Note/CC message and a second Bome translator for SAVE. Set its **Outgoing → Execute File** to:
 
 **File to Execute**
 ```text
@@ -151,7 +152,31 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Spectera\SEK-Volumes
 
 Only different values are written. The script reads back the stored volume after each change and saves a dated log under `C:\Spectera\Logs\`. Confirm the result in WebUI, and check an offline SEK's volume after it connects. Then edit the complete CSV to all desired levels, run Preview again, and run Apply. Use caution with any change that **increases** headphone levels.
 
-## 7. Bome MIDI Translator Pro + Stream Deck MidiFire
+## 7. Stream Deck button options: native launch OR MidiFire/Bome
+
+### Option A — Native Stream Deck System → Open (simplest)
+
+**No Bome, MidiFire, or Companion is required for this option.** The provided Windows `.vbs` launchers run the corresponding PowerShell operation hidden, under the current Windows user account.
+
+1. Complete **Setup**, **List**, **Export**, **Preview**, and the first visible one-pack **Apply** test in sections 2–6.
+2. In **Elgato Stream Deck** on Windows, select an unused button.
+3. Drag **System → Open** onto the button.
+4. Set **App / File** to:
+   ```text
+   C:\Spectera\Recall-SEK-Volumes.vbs
+   ```
+5. Title the button **RECALL SEK VOLUMES**.
+6. Optionally configure another **System → Open** button pointing to:
+   ```text
+   C:\Spectera\Save-SEK-Volumes.vbs
+   ```
+   Title it **SAVE SEK VOLUMES**. SAVE captures the volumes **stored at the base station** and backs up the previous CSV; it does **not** change pack volumes.
+
+Before relying on Stream Deck, double-click the respective `.vbs` in File Explorer to verify Windows Script Host launches it, then check `C:\Spectera\Logs\`. Verify the same Windows account is used for credential Setup and Stream Deck. There is **no on-button success/error feedback** from the hidden launcher; review the log if an action appears not to work. If `.vbs` file associations are restricted by Windows policy, use the MIDI/Bome method below or run the PowerShell command visibly for troubleshooting.
+
+### Option B — Stream Deck MidiFire → Bome MIDI Translator Pro
+
+Use this if you already route other show controls through Bome, or need MIDI-based triggering. **This is an alternative to Option A, not an additional requirement.**
 
 There is **no universal MidiFire profile included**, because each user's MIDI port, MIDI message and Stream Deck configuration can differ. Use any unused Note On or CC message you can identify inside Bome.
 
@@ -190,7 +215,7 @@ In **Bome MIDI Translator Pro**:
 - `-Mode Apply` validates that the CSV includes exactly the current paired SEK IDs. Offline devices can have stored settings updated, but test your firmware's sync behavior before relying on show-day recall.
 - `-Mode Setup` will replace the locally saved base-station IP and password. It won't change volumes.
 - Keep backups of your private CSV, and do not share logs, real pack serial numbers, base-station network details or credentials without your organization's approval.
-- The `.vbs` silent launcher runs as the active Windows user; it will **not** work with a DPAPI credential saved under a different Windows user.
+- The `.vbs` silent launchers run as the active Windows user, whether started by **Stream Deck System → Open** or **Bome**; they will **not** work with a DPAPI credential saved under a different Windows user.
 
 ## API documentation
 
