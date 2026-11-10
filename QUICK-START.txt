@@ -5,7 +5,7 @@ Extract this ZIP directly to C:\Spectera (all files in that folder).
 No real SEK IDs, passwords, or presets are included in the ZIP.
 
 WINDOWS POWERSHELL — FIRST-TIME SETUP
-1. Open PowerShell in your normal Windows user account (same one that runs Bome).
+1. Open PowerShell in your normal Windows user account (same one that runs Stream Deck or Bome).
 2. Enter Spectera base station IP and password:
 
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Spectera\SEK-Volumes.ps1" -Mode Setup
@@ -33,8 +33,23 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Spectera\SEK-Volumes
 Check WebUI + next pack connection, then finish all target levels in CSV.
 Re-run Preview and Apply.
 
-BOME / STREAM DECK / MIDIFIRE
-============================
+STREAM DECK — NATIVE SYSTEM > OPEN (NO BOME OR MIDIFIRE)
+=======================================================
+After Setup and a successful visible test, open Elgato Stream Deck on Windows:
+1. Add a System > Open action to a button named RECALL SEK VOLUMES.
+2. Set App / File to C:\Spectera\Recall-SEK-Volumes.vbs
+3. For an optional SAVE SEK VOLUMES button, add another System > Open:
+   C:\Spectera\Save-SEK-Volumes.vbs
+4. Double-click each VBS in File Explorer to test Windows Script Host first.
+5. Inspect C:\Spectera\Logs\ after pressing the buttons; the launches are hidden.
+
+RECALL applies the CSV presets to all paired SEK records. SAVE captures the
+volumes stored at the base station to the CSV, backing up the old file in
+C:\Spectera\PresetBackups\. SAVE does not change base-station volumes.
+These hidden launches must run under the Windows account used for Setup.
+
+ALTERNATIVE: BOME / STREAM DECK / MIDIFIRE
+=========================================
 Stream Deck MidiFire plugin -> chosen unused MIDI Note On/CC -> Bome MIDI input
 -> matching Bome translator -> Outgoing / Execute File:
 
@@ -48,8 +63,8 @@ Example trigger only: Note On, ch 16, note 110, velocity 127.
 Pick your own free message and avoid a trigger on Note Off.
 
 The hidden launcher writes a log into C:\Spectera\Logs\.
-Don't share spectera-password.dat, spectera-base-ip.txt, sek-volume-presets.csv
-or Logs/ with other users.
+Don't share spectera-password.dat, spectera-base-ip.txt, sek-volume-presets.csv,
+Logs/ or PresetBackups/ with other users.
 
 API / security / troubleshooting details: READ README.md FIRST.
 
