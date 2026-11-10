@@ -50,7 +50,14 @@ These hidden launches must run under the Windows account used for Setup.
 
 ALTERNATIVE: BOME / STREAM DECK / MIDIFIRE
 =========================================
-Stream Deck MidiFire plugin -> chosen unused MIDI Note On/CC -> Bome MIDI input
+MIDIFire (free Windows Stream Deck MIDI plugin; not in Elgato Marketplace):
+  Latest download: https://github.com/ibanman555/MIDIFire/releases/latest
+  Documentation:   https://github.com/ibanman555/MIDIFire
+Under release Assets download com.koop.streamdeck-midi.streamDeckPlugin
+(not GitHub's source ZIP). Double-click it to install into Stream Deck.
+Then configure MIDIFire > Fire MIDI to send to the MIDI input used by Bome.
+
+Stream Deck MIDIFire plugin -> chosen unused MIDI Note On/CC -> Bome MIDI input
 -> matching Bome translator -> Outgoing / Execute File:
 
 File to Execute:
